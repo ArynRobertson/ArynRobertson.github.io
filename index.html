@@ -158,12 +158,17 @@ figure{margin:0}
 .vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
 .video{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
 .screen{position:relative;aspect-ratio:16/9;background:#16212B;color:#F1F4F1;display:flex;flex-direction:column;justify-content:flex-end;padding:16px;gap:6px}
+.screen .poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
+.screen.has-poster .poster{opacity:1}
+.screen.has-poster::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,rgba(15,21,25,.28) 0%,rgba(15,21,25,0) 26%,rgba(15,21,25,.5) 56%,rgba(15,21,25,.95) 100%)}
+.screen .vk,.screen .vt{position:relative;z-index:2}
+.screen.has-poster .vt,.screen.has-poster .vk{text-shadow:0 1px 3px rgba(15,21,25,.85)}
 .screen .vt{font-family:var(--display);font-size:1.22rem;font-weight:600;line-height:1.2;max-width:22ch}
 .screen .vk{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:#E9B7B8}
 .screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.screen .play{position:absolute;right:16px;top:16px;width:52px;height:52px;border-radius:50%;border:2px solid #F1F4F1;background:rgba(241,244,241,.12);cursor:pointer;display:grid;place-items:center}
+.screen .play{position:absolute;z-index:2;right:16px;top:16px;width:52px;height:52px;border-radius:50%;border:2px solid #F1F4F1;background:rgba(15,21,25,.5);cursor:pointer;display:grid;place-items:center}
 .screen .play::before{content:"";border-left:16px solid #F1F4F1;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px}
-.screen .play:hover{background:rgba(241,244,241,.28)}
+.screen .play:hover{background:rgba(15,21,25,.8)}
 .video .meta{padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
 .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto}
 .btn{font:inherit;font-weight:700;font-size:.94rem;padding:.5rem .9rem;border-radius:8px;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;text-decoration:none;display:inline-block}
@@ -793,8 +798,14 @@ var VIDEOS=[
 ];
 function renderVideos(){VIDEOS.forEach(function(v){var url='https://youtu.be/'+v.id;
   var screen=el('div',{'class':'screen'},[el('span',{'class':'vk',text:v.kind}),el('span',{'class':'vt',text:v.t})]);
+  var poster=el('img',{'class':'poster',alt:'',loading:'lazy',referrerpolicy:'no-referrer'}),tried=false;
+  function fallback(){if(tried){poster.remove();return;}tried=true;poster.src='https://i.ytimg.com/vi/'+v.id+'/hqdefault.jpg';}
+  poster.addEventListener('load',function(){if(poster.naturalWidth<=120){fallback();return;}screen.classList.add('has-poster');});
+  poster.addEventListener('error',fallback);
+  poster.src='https://i.ytimg.com/vi/'+v.id+'/maxresdefault.jpg';
+  screen.insertBefore(poster,screen.firstChild);
   var row=el('div',{'class':'btnrow'});
-  if(canEmbed){var play=function(){screen.innerHTML='';screen.appendChild(el('iframe',{src:'https://www.youtube-nocookie.com/embed/'+v.id+'?autoplay=1&rel=0',title:v.t,allow:'accelerometer; autoplay; encrypted-media; picture-in-picture; fullscreen',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin'}));};
+  if(canEmbed){var play=function(){screen.classList.remove('has-poster');screen.innerHTML='';screen.appendChild(el('iframe',{src:'https://www.youtube-nocookie.com/embed/'+v.id+'?autoplay=1&rel=0',title:v.t,allow:'accelerometer; autoplay; encrypted-media; picture-in-picture; fullscreen',allowfullscreen:'',referrerpolicy:'strict-origin-when-cross-origin'}));};
     var pb=el('button',{'class':'play',type:'button','aria-label':'Play “'+v.t+'” here'});pb.addEventListener('click',play);screen.appendChild(pb);
     var b=el('button',{'class':'btn',type:'button',text:'Play here'});b.addEventListener('click',play);row.appendChild(b);
     row.appendChild(el('a',{'class':'btn ghost',href:url,target:'_blank',rel:'noopener',text:'Open on YouTube'}));
